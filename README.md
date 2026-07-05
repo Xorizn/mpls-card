@@ -20,6 +20,44 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## Admin & Supabase
+
+Halaman publik (`/`) membaca isinya dari Supabase; jika Supabase belum
+dikonfigurasi, halaman tetap tampil memakai isi bawaan (default). Halaman
+editor ada di `/admin`.
+
+### 1. Buat project Supabase
+
+1. Buat project baru di [supabase.com](https://supabase.com).
+2. Buka **SQL Editor**, tempel isi [`supabase/schema.sql`](supabase/schema.sql),
+   lalu **Run**. Ini membuat tabel `site_content`, bucket storage `assets`,
+   dan aturan akses (RLS).
+
+### 2. Isi environment variables
+
+Salin `.env.example` → `.env.local`, lalu isi dari **Project Settings → API**:
+
+```
+NEXT_PUBLIC_SUPABASE_URL=https://xxxx.supabase.co
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=eyJ...   # "publishable"/anon key
+```
+
+Restart `npm run dev` setelah mengubah env.
+
+### 3. Buat akun admin
+
+Di dashboard Supabase → **Authentication → Users → Add user**, buat user
+dengan email + password (aktifkan "Auto Confirm"). Login dengan akun itu di
+`/admin/login`.
+
+### 4. Edit
+
+Buka `/admin`, ubah teks/link/poster/logo, upload gambar (tersimpan ke bucket
+`assets`), lalu klik **Simpan**. Perubahan langsung tampil di `/`.
+
+> Catatan: konvensi `middleware` Next.js diganti `proxy` di Next 16 —
+> penjaga sesi & proteksi `/admin` ada di [`proxy.ts`](proxy.ts).
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:
