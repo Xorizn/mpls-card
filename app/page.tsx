@@ -15,7 +15,7 @@ const guideLinks: GuideLink[] = [
     href: "https://drive.google.com/file/d/1SjbNjv75ekxRQ332Yrsc8ZdGqvpploKI/view?usp=drivesdk",
   },
   {
-    label: "PDM",
+    label: "PEDOMAN DASAR MPLS",
     href: "https://drive.google.com/file/d/1xAvMC5O8HgqfPJcwG7cb7jARiRA10e2f/view?usp=drivesdk",
   },
   {
@@ -106,10 +106,10 @@ export default function Home() {
             priority
           />
           <Image
-            src="/images/logo-tut-wuri-handayani.svg"
-            alt="Logo Tut Wuri Handayani"
-            width={100}
-            height={100}
+            src="/images/mpk.png"
+            alt="Logo MPK Smanichi"
+            width={960}
+            height={924}
             className="h-16 w-auto drop-shadow-sm sm:h-20"
             priority
           />
