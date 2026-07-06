@@ -6,6 +6,7 @@ import type {
   SiteContent,
   Contact,
   GuideLink,
+  LinkGroup,
   Social,
   SiteLogo,
   SocialPlatform,
@@ -240,6 +241,55 @@ export default function Editor({ initial }: { initial: SiteContent }) {
     set(key, next as SiteContent[typeof key]);
   }
 
+  /* link-group helpers (groups → links) */
+  function updateGroup(gi: number, patch: Partial<LinkGroup>) {
+    set(
+      "linkGroups",
+      c.linkGroups.map((g, i) => (i === gi ? { ...g, ...patch } : g)),
+    );
+  }
+  function removeGroup(gi: number) {
+    set(
+      "linkGroups",
+      c.linkGroups.filter((_, i) => i !== gi),
+    );
+  }
+  function moveGroup(gi: number, dir: -1 | 1) {
+    const j = gi + dir;
+    if (j < 0 || j >= c.linkGroups.length) return;
+    const next = [...c.linkGroups];
+    [next[gi], next[j]] = [next[j], next[gi]];
+    set("linkGroups", next);
+  }
+  function addGroup() {
+    set("linkGroups", [...c.linkGroups, { title: "", links: [] }]);
+  }
+  function addLink(gi: number) {
+    updateGroup(gi, {
+      links: [...c.linkGroups[gi].links, { label: "", href: "" }],
+    });
+  }
+  function updateLink(gi: number, li: number, patch: Partial<GuideLink>) {
+    updateGroup(gi, {
+      links: c.linkGroups[gi].links.map((l, i) =>
+        i === li ? { ...l, ...patch } : l,
+      ),
+    });
+  }
+  function removeLink(gi: number, li: number) {
+    updateGroup(gi, {
+      links: c.linkGroups[gi].links.filter((_, i) => i !== li),
+    });
+  }
+  function moveLink(gi: number, li: number, dir: -1 | 1) {
+    const links = c.linkGroups[gi].links;
+    const j = li + dir;
+    if (j < 0 || j >= links.length) return;
+    const next = [...links];
+    [next[li], next[j]] = [next[j], next[li]];
+    updateGroup(gi, { links: next });
+  }
+
   return (
     <div className="mx-auto w-full max-w-2xl px-4 py-8">
       {/* header */}
@@ -420,84 +470,106 @@ export default function Editor({ initial }: { initial: SiteContent }) {
           </SmallButton>
         </Card>
 
-        {/* LINKS */}
-        <Card title="Panduan & Link">
-          <TextField
-            label="Judul bagian"
-            value={c.sectionHeading}
-            onChange={(v) => set("sectionHeading", v)}
-          />
-          {c.links.map((lk: GuideLink, i) => {
-            const ready = lk.href !== null;
-            return (
-              <div
-                key={i}
-                className="rounded-lg border-2 border-dashed border-[var(--ink)]/30 p-3"
-              >
-                <div className="mb-2 flex items-center justify-between gap-2">
-                  <span className="font-mono text-xs font-bold text-[var(--ink)]/70">
-                    #{i + 1}
-                  </span>
-                  <div className="flex gap-1">
-                    <SmallButton onClick={() => move("links", c.links, i, -1)}>
-                      ↑
-                    </SmallButton>
-                    <SmallButton onClick={() => move("links", c.links, i, 1)}>
-                      ↓
-                    </SmallButton>
-                    <SmallButton
-                      tone="danger"
-                      onClick={() => removeItem("links", c.links, i)}
-                    >
-                      Hapus
-                    </SmallButton>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <input
-                    className={inputCls}
-                    placeholder="Judul link"
-                    value={lk.label}
-                    onChange={(e) =>
-                      updateItem("links", c.links, i, { label: e.target.value })
-                    }
-                  />
-                  <label className="flex items-center gap-2 text-xs font-semibold text-[var(--ink)]">
-                    <input
-                      type="checkbox"
-                      checked={ready}
-                      onChange={(e) =>
-                        updateItem("links", c.links, i, {
-                          href: e.target.checked ? "" : null,
-                        })
-                      }
-                    />
-                    Link sudah tersedia (jika tidak, tampil &ldquo;Masih
-                    dibuat&rdquo;)
-                  </label>
-                  {ready && (
-                    <input
-                      className={inputCls}
-                      placeholder="https://…"
-                      value={lk.href ?? ""}
-                      onChange={(e) =>
-                        updateItem("links", c.links, i, {
-                          href: e.target.value,
-                        })
-                      }
-                    />
-                  )}
+        {/* LINK GROUPS */}
+        <Card title="Grup Link">
+          <p className="-mt-2 text-xs text-[var(--ink)]/60">
+            Kelompokkan link ke beberapa grup (mis. &ldquo;Panduan &amp;
+            Materi&rdquo;, &ldquo;Link Kelas X&rdquo;). Tiap grup punya judul dan
+            daftar link sendiri.
+          </p>
+          {c.linkGroups.map((group: LinkGroup, gi) => (
+            <div
+              key={gi}
+              className="space-y-3 rounded-lg border-2 border-[var(--ink)] bg-[var(--gold)]/10 p-3"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <span className="font-mono text-xs font-bold uppercase text-[var(--ink)]">
+                  Grup #{gi + 1}
+                </span>
+                <div className="flex gap-1">
+                  <SmallButton onClick={() => moveGroup(gi, -1)}>↑</SmallButton>
+                  <SmallButton onClick={() => moveGroup(gi, 1)}>↓</SmallButton>
+                  <SmallButton tone="danger" onClick={() => removeGroup(gi)}>
+                    Hapus grup
+                  </SmallButton>
                 </div>
               </div>
-            );
-          })}
-          <SmallButton
-            onClick={() =>
-              set("links", [...c.links, { label: "", href: "" }])
-            }
-          >
-            + Tambah link
-          </SmallButton>
+              <div>
+                <Label>Judul grup</Label>
+                <input
+                  className={inputCls}
+                  placeholder="mis. Panduan & Materi / Link Kelas X"
+                  value={group.title}
+                  onChange={(e) => updateGroup(gi, { title: e.target.value })}
+                />
+              </div>
+
+              {group.links.map((lk, li) => {
+                const ready = lk.href !== null;
+                return (
+                  <div
+                    key={li}
+                    className="rounded-lg border-2 border-dashed border-[var(--ink)]/30 bg-white/60 p-3"
+                  >
+                    <div className="mb-2 flex items-center justify-between gap-2">
+                      <span className="font-mono text-xs font-bold text-[var(--ink)]/70">
+                        #{li + 1}
+                      </span>
+                      <div className="flex gap-1">
+                        <SmallButton onClick={() => moveLink(gi, li, -1)}>
+                          ↑
+                        </SmallButton>
+                        <SmallButton onClick={() => moveLink(gi, li, 1)}>
+                          ↓
+                        </SmallButton>
+                        <SmallButton
+                          tone="danger"
+                          onClick={() => removeLink(gi, li)}
+                        >
+                          Hapus
+                        </SmallButton>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <input
+                        className={inputCls}
+                        placeholder="Judul link"
+                        value={lk.label}
+                        onChange={(e) =>
+                          updateLink(gi, li, { label: e.target.value })
+                        }
+                      />
+                      <label className="flex items-center gap-2 text-xs font-semibold text-[var(--ink)]">
+                        <input
+                          type="checkbox"
+                          checked={ready}
+                          onChange={(e) =>
+                            updateLink(gi, li, {
+                              href: e.target.checked ? "" : null,
+                            })
+                          }
+                        />
+                        Link sudah tersedia (jika tidak, tampil &ldquo;Masih
+                        dibuat&rdquo;)
+                      </label>
+                      {ready && (
+                        <input
+                          className={inputCls}
+                          placeholder="https://…"
+                          value={lk.href ?? ""}
+                          onChange={(e) =>
+                            updateLink(gi, li, { href: e.target.value })
+                          }
+                        />
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+              <SmallButton onClick={() => addLink(gi)}>+ Tambah link</SmallButton>
+            </div>
+          ))}
+          <SmallButton onClick={addGroup}>+ Tambah grup</SmallButton>
         </Card>
 
         {/* SOCIALS */}

@@ -2,6 +2,7 @@ import { createClient } from "./supabase/server";
 import { isSupabaseConfigured } from "./supabase/config";
 
 export type GuideLink = { label: string; href: string | null };
+export type LinkGroup = { title: string; links: GuideLink[] };
 export type Contact = { name: string; phone: string };
 export type SocialPlatform = "instagram" | "tiktok" | "youtube";
 export type Social = { label: string; href: string; platform: SocialPlatform };
@@ -12,7 +13,6 @@ export type SiteContent = {
   titleLine1: string;
   titleLine2: string;
   theme: string;
-  sectionHeading: string;
   descriptionTitle: string;
   description: string;
   contactLabel: string;
@@ -21,7 +21,7 @@ export type SiteContent = {
   posterAlt: string;
   logos: SiteLogo[];
   contacts: Contact[];
-  links: GuideLink[];
+  linkGroups: LinkGroup[];
   socials: Social[];
   footerLine1: string;
   footerLine2: string;
@@ -34,7 +34,6 @@ export const DEFAULT_CONTENT: SiteContent = {
   titleLine1: "Ozone",
   titleLine2: "Smanichi",
   theme: "MPLS ramah, hari baru aman dan nyaman di sekolah",
-  sectionHeading: "Panduan & Materi",
   descriptionTitle: "Buku Panduan MPLS 2026",
   description:
     "Tautan ini merupakan Buku Panduan kegiatan MPLS SMA Negeri 1 Bangli tahun 2026! Telah termuat segala hal yang menjadi acuan seluruh calon murid SMA Negeri 1 Bangli selama berkegiatan di Masa Pengenalan Lingkungan Sekolah Tahun Ajaran 2026-2027.",
@@ -51,33 +50,38 @@ export const DEFAULT_CONTENT: SiteContent = {
     { name: "MPK", phone: "+62 812-3903-9132" },
     { name: "OSIS", phone: "+62 813-3940-5598" },
   ],
-  links: [
+  linkGroups: [
     {
-      label: "SMANICHI",
-      href: "https://drive.google.com/file/d/1F4txAymybpIDFFydnoUMBUrlmJ8IYqTD/view?usp=drivesdk",
+      title: "Panduan & Materi",
+      links: [
+        {
+          label: "SMANICHI",
+          href: "https://drive.google.com/file/d/1F4txAymybpIDFFydnoUMBUrlmJ8IYqTD/view?usp=drivesdk",
+        },
+        {
+          label: "OZONE",
+          href: "https://drive.google.com/file/d/1SjbNjv75ekxRQ332Yrsc8ZdGqvpploKI/view?usp=drivesdk",
+        },
+        {
+          label: "PDM",
+          href: "https://drive.google.com/file/d/1xAvMC5O8HgqfPJcwG7cb7jARiRA10e2f/view?usp=drivesdk",
+        },
+        {
+          label: "TATA TERTIB KEGIATAN",
+          href: "https://drive.google.com/file/d/16eOwuo2BQB7f7wbCBrQ1MBQf9pvbGfok/view?usp=drivesdk",
+        },
+        {
+          label: "RUNDOWN KEGIATAN MPLS",
+          href: "https://drive.google.com/file/d/16oCYLILmP9i8ryl0ijBzjl4urc5v3tEs/view?usp=drivesdk",
+        },
+        { label: "PENGGUNAAN TWIBBON", href: null },
+        {
+          label: "HYMNE & MARS SMA N 1 BANGLI",
+          href: "https://drive.google.com/file/d/1-5KfTwJEsNct3-Br3HMuBHIMBWjey1ev/view?usp=drivesdk",
+        },
+        { label: "YEL - YEL", href: null },
+      ],
     },
-    {
-      label: "OZONE",
-      href: "https://drive.google.com/file/d/1SjbNjv75ekxRQ332Yrsc8ZdGqvpploKI/view?usp=drivesdk",
-    },
-    {
-      label: "PDM",
-      href: "https://drive.google.com/file/d/1xAvMC5O8HgqfPJcwG7cb7jARiRA10e2f/view?usp=drivesdk",
-    },
-    {
-      label: "TATA TERTIB KEGIATAN",
-      href: "https://drive.google.com/file/d/16eOwuo2BQB7f7wbCBrQ1MBQf9pvbGfok/view?usp=drivesdk",
-    },
-    {
-      label: "RUNDOWN KEGIATAN MPLS",
-      href: "https://drive.google.com/file/d/16oCYLILmP9i8ryl0ijBzjl4urc5v3tEs/view?usp=drivesdk",
-    },
-    { label: "PENGGUNAAN TWIBBON", href: null },
-    {
-      label: "HYMNE & MARS SMA N 1 BANGLI",
-      href: "https://drive.google.com/file/d/1-5KfTwJEsNct3-Br3HMuBHIMBWjey1ev/view?usp=drivesdk",
-    },
-    { label: "YEL - YEL", href: null },
   ],
   socials: [
     {
@@ -100,15 +104,32 @@ export const DEFAULT_CONTENT: SiteContent = {
   footerLine2: "OSIS & MPK Ozone Smanichi",
 };
 
+/** Legacy shape from before link grouping was introduced. */
+type LegacyContent = { links?: GuideLink[]; sectionHeading?: string };
+
 /** Merge a partial saved payload over the defaults so missing keys are safe. */
 export function mergeContent(data: Partial<SiteContent> | null): SiteContent {
   if (!data) return DEFAULT_CONTENT;
+
+  // Backward-compat: convert an old flat `links` list into a single group.
+  const legacy = data as LegacyContent;
+  const linkGroups =
+    data.linkGroups ??
+    (legacy.links
+      ? [
+          {
+            title: legacy.sectionHeading ?? "Panduan & Materi",
+            links: legacy.links,
+          },
+        ]
+      : DEFAULT_CONTENT.linkGroups);
+
   return {
     ...DEFAULT_CONTENT,
     ...data,
     logos: data.logos ?? DEFAULT_CONTENT.logos,
     contacts: data.contacts ?? DEFAULT_CONTENT.contacts,
-    links: data.links ?? DEFAULT_CONTENT.links,
+    linkGroups,
     socials: data.socials ?? DEFAULT_CONTENT.socials,
   };
 }

@@ -39,6 +39,58 @@ function ArrowIcon() {
   );
 }
 
+function LinkButton({ link }: { link: { label: string; href: string | null } }) {
+  const isReady = Boolean(link.href);
+  const base =
+    "link-btn flex items-center justify-between gap-3 rounded-xl border-[3px] border-[var(--ink)] px-4 py-3.5 nb-shadow";
+  const inner = (
+    <>
+      <span className="flex min-w-0 items-center gap-3">
+        <span className="flex h-9 w-9 flex-none items-center justify-center rounded-lg border-2 border-[var(--ink)] bg-[var(--gold-deep)]">
+          <DocIcon />
+        </span>
+        <span className="flex min-w-0 flex-col text-left">
+          <span className="truncate font-mono text-sm font-bold uppercase leading-tight sm:text-base">
+            {link.label}
+          </span>
+          {!isReady && (
+            <span className="text-[0.65rem] font-semibold uppercase tracking-wide text-[var(--gold-soft)]/90">
+              Masih dibuat
+            </span>
+          )}
+        </span>
+      </span>
+      <span className="flex-none">
+        {isReady ? (
+          <ArrowIcon />
+        ) : (
+          <svg viewBox="0 0 24 24" className="h-5 w-5 fill-current opacity-60">
+            <path d="M17 8V7a5 5 0 0 0-10 0v1H5v13h14V8h-2Zm-8-1a3 3 0 0 1 6 0v1H9V7Zm3 10a2 2 0 1 1 0-4 2 2 0 0 1 0 4Z" />
+          </svg>
+        )}
+      </span>
+    </>
+  );
+
+  return isReady ? (
+    <a
+      href={link.href as string}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={`${base} link-gradient text-[#fffdf5]`}
+    >
+      {inner}
+    </a>
+  ) : (
+    <div
+      aria-disabled="true"
+      className={`${base} link-gradient-muted cursor-not-allowed text-[#fffdf5]/80`}
+    >
+      {inner}
+    </div>
+  );
+}
+
 export default function CardView({ content }: { content: SiteContent }) {
   return (
     <div className="flex flex-1 flex-col items-center px-4 py-10 sm:py-16">
@@ -126,75 +178,30 @@ export default function CardView({ content }: { content: SiteContent }) {
           )}
         </section>
 
-        {/* ---- Section heading ---- */}
-        <div className="mb-4 flex items-center justify-center gap-2 text-[var(--ink)]">
-          <span className="font-display text-base font-bold uppercase tracking-wide">
-            {content.sectionHeading}
-          </span>
-          <span className="animate-bounce">
-            <svg viewBox="0 0 24 24" className="h-5 w-5 fill-[var(--gold-deep)]">
-              <path d="M12 16.5 5.5 10l1.4-1.4L12 13.7l5.1-5.1L18.5 10 12 16.5Z" />
-            </svg>
-          </span>
-        </div>
-
-        {/* ---- Guide links ---- */}
-        <nav className="flex flex-col gap-3.5">
-          {content.links.map((link, i) => {
-            const isReady = Boolean(link.href);
-            const inner = (
-              <>
-                <span className="flex min-w-0 items-center gap-3">
-                  <span className="flex h-9 w-9 flex-none items-center justify-center rounded-lg border-2 border-[var(--ink)] bg-[var(--gold-deep)]">
-                    <DocIcon />
+        {/* ---- Grouped guide links ---- */}
+        <div className="space-y-8">
+          {content.linkGroups.map((group, gi) => (
+            <div key={`${group.title}-${gi}`}>
+              {group.title && (
+                <div className="mb-4 flex items-center justify-center gap-2 text-[var(--ink)]">
+                  <span className="font-display text-base font-bold uppercase tracking-wide">
+                    {group.title}
                   </span>
-                  <span className="flex min-w-0 flex-col text-left">
-                    <span className="truncate font-mono text-sm font-bold uppercase leading-tight sm:text-base">
-                      {link.label}
-                    </span>
-                    {!isReady && (
-                      <span className="text-[0.65rem] font-semibold uppercase tracking-wide text-[var(--gold-soft)]/90">
-                        Masih dibuat
-                      </span>
-                    )}
-                  </span>
-                </span>
-                <span className="flex-none">
-                  {isReady ? (
-                    <ArrowIcon />
-                  ) : (
-                    <svg viewBox="0 0 24 24" className="h-5 w-5 fill-current opacity-60">
-                      <path d="M17 8V7a5 5 0 0 0-10 0v1H5v13h14V8h-2Zm-8-1a3 3 0 0 1 6 0v1H9V7Zm3 10a2 2 0 1 1 0-4 2 2 0 0 1 0 4Z" />
+                  <span className="animate-bounce">
+                    <svg viewBox="0 0 24 24" className="h-5 w-5 fill-[var(--gold-deep)]">
+                      <path d="M12 16.5 5.5 10l1.4-1.4L12 13.7l5.1-5.1L18.5 10 12 16.5Z" />
                     </svg>
-                  )}
-                </span>
-              </>
-            );
-
-            const base =
-              "link-btn flex items-center justify-between gap-3 rounded-xl border-[3px] border-[var(--ink)] px-4 py-3.5 nb-shadow";
-
-            return isReady ? (
-              <a
-                key={`${link.label}-${i}`}
-                href={link.href as string}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={`${base} link-gradient text-[#fffdf5]`}
-              >
-                {inner}
-              </a>
-            ) : (
-              <div
-                key={`${link.label}-${i}`}
-                aria-disabled="true"
-                className={`${base} link-gradient-muted cursor-not-allowed text-[#fffdf5]/80`}
-              >
-                {inner}
-              </div>
-            );
-          })}
-        </nav>
+                  </span>
+                </div>
+              )}
+              <nav className="flex flex-col gap-3.5">
+                {group.links.map((link, i) => (
+                  <LinkButton key={`${link.label}-${i}`} link={link} />
+                ))}
+              </nav>
+            </div>
+          ))}
+        </div>
 
         {/* ---- Socials ---- */}
         {content.socials.length > 0 && (
